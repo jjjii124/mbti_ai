@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>폐교, 괴담이 시작되는 밤</title>
+<style>
+  :root{
+    --ink: #dbe2db;
+    --ink-dim: #8a958c;
+    --fluoro: #e8f4e2;
+    --blood: #a02525;
+    --blood-dim: #5c1414;
+    --card-border: #2a2e2b;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0; min-height:100vh; position:relative;
+    color:var(--ink);
+    font-family:'Noto Serif KR', Georgia, serif;
+    display:flex; align-items:center; justify-content:center;
+    padding:24px;
+    background:#030404;
+    overflow-x:hidden;
+  }
+
+  /* ---- realistic-ish hallway backdrop ---- */
+  .hallway-bg{
+    position:fixed; inset:0; z-index:0;
+    background:
+      radial-gradient(ellipse 26% 40% at 50% 38%, rgba(255,238,190,0.16), rgba(255,238,190,0) 70%),
+      linear-gradient(180deg, #05070a 0%, #0a0d10 40%, #06080a 100%);
+    overflow:hidden;
+  }
+  .hallway-bg svg{ position:absolute; inset:0; width:100%; height:100%; }
+  .grain{
+    position:fixed; inset:0; z-index:1; pointer-events:none;
+    opacity:0.22; mix-blend-mode:overlay;
+  }
+  .vignette{
+    position:fixed; inset:0; z-index:1; pointer-events:none;
+    background: radial-gradient(ellipse 70% 70% at 50% 45%, transparent 40%, rgba(0,0,0,0.75) 100%);
+  }
+
+  .stage{ position:relative; z-index:2; width:100%; max-width:540px; }
+  .frame{
+    position:relative;
+    background: rgba(8,9,9,0.42);
+    backdrop-filter: blur(5px) brightness(0.85);
+    -webkit-backdrop-filter: blur(5px) brightness(0.85);
+    border:1px solid var(--card-border);
+    border-radius:4px;
+    padding:38px 30px 30px;
+    box-shadow: 0 40px 90px rgba(0,0,0,0.7);
+    overflow:hidden;
+  }
+  .frame h1, .frame .story, .frame .ending-text, .frame .type-name{
+    text-shadow: 0 2px 10px rgba(0,0,0,0.9);
+  }
+  .frame::before{
+    content:""; position:absolute; inset:0;
+    background: repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 3px);
+    pointer-events:none; mix-blend-mode:overlay;
+  }
+  .frame::after{
+    content:""; position:absolute; inset:0;
+    background: radial-gradient(circle at 50% 0%, rgba(232,244,226,0.045), transparent 55%);
+    pointer-events:none; animation: flicker 4.2s steps(1) infinite;
+  }
+  @keyframes flicker{
+    0%,100%{opacity:1;} 7%{opacity:0.35;} 8%{opacity:1;} 30%{opacity:0.55;} 31%{opacity:1;}
+    68%{opacity:0.3;} 69%{opacity:1;}
+  }
+  .rec{
+    position:absolute; top:13px; right:15px; z-index:2;
+    font-family:-apple-system,'Malgun Gothic',sans-serif; font-size:11px;
+    letter-spacing:1px; color:var(--blood); display:flex; align-items:center; gap:5px;
+  }
+  .rec .dot{ width:6px;height:6px;border-radius:50%; background:var(--blood); animation:blink 1.1s steps(1) infinite; }
+  @keyframes blink{ 50%{opacity:0;} }
+
+  .dots{ display:flex; flex-wrap:wrap; gap:5px; justify-content:center; margin-bottom:22px; max-width:280px; margin-left:auto; margin-right:auto; }
+  .dot-step{ width:5px;height:5px;border-radius:50%; background:var(--card-border); }
+  .dot-step.active{ background:var(--blood); }
+  .dot-step.done{ background:var(--blood-dim); }
+
+  .eyebrow{
+    font-family:-apple-system,'Malgun Gothic',sans-serif; font-size:11px; letter-spacing:3px;
+    color:var(--ink-dim); text-align:center; margin-bottom:14px; text-transform:uppercase;
+  }
+  .icon{ display:flex; justify-content:center; margin-bottom:16px; }
+  .icon svg{ width:58px; height:58px; opacity:0.9; }
+
+  h1{ font-size:21px; text-align:center; margin:0 0 16px; font-weight:400; line-height:1.5; letter-spacing:0.5px; }
+  .story{ font-size:15.5px; line-height:1.9; margin-bottom:26px; min-height:70px; }
+  .story em{ color:var(--blood); font-style:normal; }
+  .choices{ display:flex; flex-direction:column; gap:11px; }
+  button.choice{
+    font-family:-apple-system,'Malgun Gothic',sans-serif; text-align:left;
+    background:rgba(255,255,255,0.02); border:1px solid var(--card-border); color:var(--ink);
+    padding:14px 17px; border-radius:3px; font-size:14px; cursor:pointer; transition:.2s ease; line-height:1.5;
+  }
+  button.choice:hover{ border-color:var(--blood-dim); background:rgba(160,37,37,0.09); transform:translateX(2px); }
+  button.choice:focus-visible{ outline:2px solid var(--blood); outline-offset:2px; }
+
+  .start-btn{
+    display:block; margin:8px auto 0; font-family:-apple-system,'Malgun Gothic',sans-serif;
+    background:var(--blood); color:#f4ece6; border:none; padding:12px 30px; border-radius:2px;
+    font-size:14px; font-weight:600; letter-spacing:0.5px; cursor:pointer; transition:.15s;
+  }
+  .start-btn:hover{ transform:translateY(-1px); box-shadow:0 8px 22px rgba(160,37,37,0.3); }
+
+  .compass{ display:flex; justify-content:center; gap:10px; margin:2px 0 22px; flex-wrap:wrap; }
+  .letter-slot{
+    width:40px;height:40px;border:1px solid var(--card-border);border-radius:50%;
+    display:flex;align-items:center;justify-content:center; font-family:Georgia,serif; font-size:16px;
+    color:var(--blood); background:radial-gradient(circle, rgba(160,37,37,0.16), transparent 70%);
+    box-shadow:0 0 14px rgba(160,37,37,0.25);
+  }
+  .type-title{ text-align:center; font-size:29px; letter-spacing:4px; color:var(--fluoro); margin:2px 0 4px; text-shadow:0 0 12px rgba(232,244,226,0.15); }
+  .type-name{ text-align:center; font-size:13.5px; color:var(--ink-dim); font-family:-apple-system,'Malgun Gothic',sans-serif; margin-bottom:20px; letter-spacing:1px; }
+  .ending-text{ font-size:15.5px; line-height:1.95; text-align:center; margin-bottom:26px; }
+  .restart{
+    display:block; margin:0 auto; background:none; border:1px solid var(--card-border); color:var(--ink-dim);
+    font-family:-apple-system,'Malgun Gothic',sans-serif; padding:10px 20px; border-radius:2px; font-size:12.5px;
+    cursor:pointer; transition:.2s;
+  }
+  .restart:hover{ color:var(--blood); border-color:var(--blood-dim); }
+
+  @media (max-width:480px){
+    .frame{ padding:28px 18px 24px; }
+    h1{ font-size:19px; }
+    .story, .ending-text{ font-size:14.5px; }
+    .type-title{ font-size:24px; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .frame::after{ animation:none; } .rec .dot{ animation:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hallway-bg">
+  <svg viewBox="0 0 800 800" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#0c0e10"/>
+        <stop offset="1" stop-color="#020303"/>
+      </linearGradient>
+      <linearGradient id="wallL" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#07090a"/>
+        <stop offset="1" stop-color="#14171a"/>
+      </linearGradient>
+      <linearGradient id="wallR" x1="1" y1="0" x2="0" y2="0">
+        <stop offset="0" stop-color="#07090a"/>
+        <stop offset="1" stop-color="#14171a"/>
+      </linearGradient>
+      <radialGradient id="doorGlow" cx="50%" cy="50%" r="50%">
+        <stop offset="0" stop-color="#fdeec2" stop-opacity="0.55"/>
+        <stop offset="60%" stop-color="#fdeec2" stop-opacity="0.08"/>
+        <stop offset="100%" stop-color="#fdeec2" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+
+    <!-- perspective corridor -->
+    <polygon points="0,800 800,800 460,330 340,330" fill="url(#floor)"/>
+    <polygon points="0,0 0,800 340,330 340,190" fill="url(#wallL)"/>
+    <polygon points="800,0 800,800 460,330 460,190" fill="url(#wallR)"/>
+    <polygon points="340,190 460,190 460,330 340,330" fill="#0a0c0d"/>
+
+    <!-- vanishing door with light bleeding through -->
+    <rect x="372" y="220" width="56" height="105" fill="#050505" stroke="#2a2e2b" stroke-width="1"/>
+    <circle cx="400" cy="272" r="90" fill="url(#doorGlow)"/>
+
+    <!-- lockers left -->
+    <g opacity="0.55">
+      <rect x="20" y="430" width="60" height="220" fill="#0e1113" stroke="#1d2224" stroke-width="1"/>
+      <rect x="84" y="430" width="60" height="220" fill="#101315" stroke="#1d2224" stroke-width="1"/>
+      <rect x="148" y="430" width="60" height="220" fill="#0e1113" stroke="#1d2224" stroke-width="1"/>
+      <rect x="212" y="420" width="55" height="200" fill="#101315" stroke="#1d2224" stroke-width="1"/>
+    </g>
+    <!-- lockers right -->
+    <g opacity="0.55">
+      <rect x="720" y="430" width="60" height="220" fill="#0e1113" stroke="#1d2224" stroke-width="1"/>
+      <rect x="656" y="430" width="60" height="220" fill="#101315" stroke="#1d2224" stroke-width="1"/>
+      <rect x="592" y="430" width="60" height="220" fill="#0e1113" stroke="#1d2224" stroke-width="1"/>
+      <rect x="533" y="420" width="55" height="200" fill="#101315" stroke="#1d2224" stroke-width="1"/>
+    </g>
+
+    <!-- floor perspective lines -->
+    <g stroke="#1a1d1f" stroke-width="1" opacity="0.5">
+      <line x1="0" y1="800" x2="340" y2="330"/>
+      <line x1="800" y1="800" x2="460" y2="330"/>
+      <line x1="130" y1="800" x2="380" y2="340"/>
+      <line x1="670" y1="800" x2="420" y2="340"/>
+    </g>
+
+    <!-- faint distant silhouette -->
+    <g opacity="0.5">
+      <ellipse cx="400" cy="300" rx="7" ry="9" fill="#050505"/>
+      <path d="M393 309 C 391 320 391 330 393 336 L 407 336 C 409 330 409 320 407 309 Z" fill="#050505"/>
+    </g>
+  </svg>
+</div>
+
+<svg class="grain" width="0" height="0">
+  <filter id="noiseFilter">
+    <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+</svg>
+<div class="grain" style="filter:url(#noiseFilter);"></div>
+<div class="vignette"></div>
+
+<div class="stage"><div class="frame" id="frame"></div></div>
+
+<script>
+const svgIcons = {
+  moon: `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M40 8C28 10 20 22 22 34C24 46 36 54 48 50C38 52 28 44 27 32C26 20 32 11 40 8Z" stroke="#dbe2db" stroke-width="1.5"/><rect x="6" y="46" width="52" height="2" fill="#2a2e2b"/><path d="M10 46L14 36H50L54 46" stroke="#8a958c" stroke-width="1.2"/></svg>`,
+  note: `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="14" y="8" width="36" height="48" rx="1" stroke="#dbe2db" stroke-width="1.5"/><line x1="20" y1="18" x2="44" y2="18" stroke="#8a958c" stroke-width="1"/><line x1="20" y1="24" x2="44" y2="24" stroke="#a02525" stroke-width="1.1"/><line x1="20" y1="30" x2="44" y2="30" stroke="#8a958c" stroke-width="1"/><line x1="20" y1="36" x2="40" y2="36" stroke="#a02525" stroke-width="1.1"/><line x1="20" y1="42" x2="44" y2="42" stroke="#8a958c" stroke-width="1"/></svg>`,
+  ear: `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M24 44C16 40 14 28 20 18C26 8 40 8 46 16" stroke="#dbe2db" stroke-width="1.5"/><path d="M30 40C42 40 44 26 34 20" stroke="#8a958c" stroke-width="1.3"/><path d="M46 24C50 28 50 34 46 38" stroke="#a02525" stroke-width="1.3"/><path d="M50 20C56 26 56 36 50 42" stroke="#a02525" stroke-width="1"/></svg>`,
+  doors: `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="14" width="14" height="38" stroke="#dbe2db" stroke-width="1.3"/><rect x="25" y="10" width="14" height="42" stroke="#dbe2db" stroke-width="1.3"/><rect x="44" y="16" width="14" height="36" stroke="#dbe2db" stroke-width="1.3"/><circle cx="16" cy="34" r="1.3" fill="#a02525"/><circle cx="35" cy="32" r="1.3" fill="#a02525"/><circle cx="54" cy="35" r="1.3" fill="#a02525"/></svg>`,
+  figure: `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="16" r="7" stroke="#dbe2db" stroke-width="1.4"/><path d="M20 54C20 38 24 28 32 28C40 28 44 38 44 54" stroke="#dbe2db" stroke-width="1.4"/><line x1="14" y1="56" x2="50" y2="56" stroke="#2a2e2b" stroke-width="1"/><line x1="32" y1="30" x2="32" y2="48" stroke="#a02525" stroke-width="0.8" stroke-dasharray="2 2"/></svg>`,
+  board: `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="12" width="48" height="32" stroke="#dbe2db" stroke-width="1.4"/><path d="M14 18h36M14 22h30M14 26h36M14 30h24M14 34h36M14 38h20" stroke="#a02525" stroke-width="0.7"/><rect x="6" y="46" width="52" height="3" fill="#2a2e2b"/></svg>`,
+  photo: `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="12" y="10" width="40" height="46" stroke="#dbe2db" stroke-width="1.4"/><rect x="17" y="15" width="30" height="26" stroke="#8a958c" stroke-width="1"/><path d="M17 36L27 26L34 33L47 20" stroke="#a02525" stroke-width="1"/><line x1="17" y1="46" x2="42" y2="46" stroke="#8a958c" stroke-width="1"/></svg>`,
+  bulboff: `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="26" r="14" stroke="#8a958c" stroke-width="1.3" stroke-dasharray="3 3"/><line x1="26" y1="40" x2="38" y2="40" stroke="#dbe2db" stroke-width="1.2"/><line x1="27" y1="45" x2="37" y2="45" stroke="#dbe2db" stroke-width="1.2"/><line x1="10" y1="10" x2="54" y2="46" stroke="#a02525" stroke-width="1.2"/></svg>`,
+  radio: `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="24" width="44" height="26" rx="2" stroke="#dbe2db" stroke-width="1.4"/><circle cx="20" cy="37" r="6" stroke="#8a958c" stroke-width="1.1"/><circle cx="40" cy="37" r="6" stroke="#8a958c" stroke-width="1.1"/><path d="M18 24L14 10" stroke="#a02525" stroke-width="1.2"/><path d="M22 24L28 12" stroke="#a02525" stroke-width="1"/></svg>`,
+  stairs: `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 54H18V44H28V34H38V24H48V14H56" stroke="#dbe2db" stroke-width="1.5"/><path d="M8 54L8 44L18 44" stroke="#8a958c" stroke-width="1"/><circle cx="52" cy="18" r="2" fill="#a02525"/></svg>`,
+  piano: `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="24" width="48" height="20" stroke="#dbe2db" stroke-width="1.4"/><line x1="16" y1="24" x2="16" y2="44" stroke="#8a958c" stroke-width="1"/><line x1="24" y1="24" x2="24" y2="44" stroke="#8a958c" stroke-width="1"/><line x1="32" y1="24" x2="32" y2="44" stroke="#a02525" stroke-width="1.2"/><line x1="40" y1="24" x2="40" y2="44" stroke="#8a958c" stroke-width="1"/><line x1="48" y1="24" x2="48" y2="44" stroke="#8a958c" stroke-width="1"/></svg>`,
+  box: `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="14" y="24" width="36" height="28" stroke="#dbe2db" stroke-width="1.4"/><path d="M14 24L32 12L50 24" stroke="#8a958c" stroke-width="1.2"/><rect x="27" y="30" width="10" height="10" stroke="#a02525" stroke-width="1.2"/><line x1="32" y1="30" x2="32" y2="26" stroke="#a02525" stroke-width="1.2"/></svg>`,
+  shadow: `<svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="26" cy="14" r="6" stroke="#dbe2db" stroke-width="1.3"/><path d="M16 46C16 32 20 24 26 24C32 24 36 32 36 46" stroke="#dbe2db" stroke-width="1.3"/><circle cx="38" cy="20" r="6" stroke="#a02525" stroke-width="1" opacity="0.6"/><path d="M28 52C28 38 32 30 38 30C44 30 48 38 48 52" stroke="#a02525" stroke-width="1" opacity="0.6"/></svg>`,
+};
+
+const scenes = [
+  { axis:'EI', icon:'moon', title:'자정의 교실',
+    text:'방과 후 깜빡 잠들었다 깨어난 교실, 창밖은 이미 캄캄하다. 복도 저편에서 무언가 걸어오는 <em>발소리</em>가 들린다. 그 소리는, 당신의 심장 박동과 조금씩 어긋나기 시작한다.',
+    choices:[ {text:'"거기 누구야!" 목소리를 높여 확인한다', value:'E'}, {text:'숨을 죽이고 조용히 상황부터 살핀다', value:'I'} ] },
+  { axis:'SN', icon:'note', title:'겹쳐 쓰인 경고',
+    text:'서랍 속 낡은 노트에 "여기 서지 마라"는 문장이 서로 다른 필체로 <em>겹겹이</em> 덧써져 있다. 마치 여러 사람이, 각기 다른 시절에 같은 문장을 적어놓은 것처럼.',
+    choices:[ {text:'적힌 규칙을 하나하나 그대로 지킨다', value:'S'}, {text:'문장 속에 숨은 다른 의미를 상상해본다', value:'N'} ] },
+  { axis:'TF', icon:'ear', title:'잠긴 창고 안',
+    text:'청소도구함 안에서 <em>흐느끼는 소리</em>가 들린다. 손잡이를 당기는 순간, 안쪽에서도 똑같은 힘으로 손잡이가 당겨지는 게 느껴진다.',
+    choices:[ {text:'멈춰서 위험한 상황인지 냉정하게 판단한다', value:'T'}, {text:'마음이 쓰여 곧장 안쪽에 말을 건다', value:'F'} ] },
+  { axis:'JP', icon:'doors', title:'숨 쉬는 복도',
+    text:'복도 끝 세 개의 문 — 체육관, 계단, 화장실. 벽이 마치 <em>숨을 쉬듯</em> 미세하게 부풀었다 가라앉기를 반복한다.',
+    choices:[ {text:'전체 동선을 먼저 확실히 정하고 움직인다', value:'J'}, {text:'가장 가까운 문부터 일단 열어본다', value:'P'} ] },
+  { axis:'EI', icon:'figure', title:'움직이지 않는 그림자',
+    text:'복도 저 끝, 누군가 서 있다. 5분이 지나도록 그 <em>실루엣</em>은 단 한 걸음도 움직이지 않는다.',
+    choices:[ {text:'다가가 말을 건다 — "저기요?"', value:'E'}, {text:'거리를 두고 저것을 지켜본다', value:'I'} ] },
+  { axis:'SN', icon:'board', title:'줄어드는 글씨',
+    text:'칠판 가득, 같은 문장이 반복해서 적혀 있다. 위에서 아래로 갈수록 글씨가 점점 작아지다가, 맨 아래 줄은 <em>거의 알아볼 수 없을 만큼</em> 작다.',
+    choices:[ {text:'문장을 위에서부터 순서대로 읽어본다', value:'S'}, {text:'전체 글씨가 그리는 큰 형상을 상상해본다', value:'N'} ] },
+  { axis:'TF', icon:'photo', title:'낯익은 얼굴',
+    text:'사물함 안에서 사진 한 장을 발견한다. 분명 <em>당신의 얼굴</em>인데, 이런 사진을 찍은 기억이 전혀 없다.',
+    choices:[ {text:'사진의 사실 정보만 냉정히 확인한다', value:'T'}, {text:'누가, 왜 이걸 찍었을지 마음이 쓰인다', value:'F'} ] },
+  { axis:'JP', icon:'bulboff', title:'꺼지는 불빛',
+    text:'복도 형광등이 저 멀리서부터 순서대로 하나씩 꺼지기 시작한다. <em>어둠</em>이 이쪽으로 다가오고 있다.',
+    choices:[ {text:'처음 세운 계획대로 움직인다', value:'J'}, {text:'그 자리에서 즉흥적으로 방향을 바꾼다', value:'P'} ] },
+  { axis:'EI', icon:'radio', title:'라디오 속 목소리',
+    text:'보건실 라디오에서 지지직거리는 잡음 사이로, 누군가 <em>당신의 이름</em>을 부르는 것 같다.',
+    choices:[ {text:'"누구세요?" 라디오에 대답한다', value:'E'}, {text:'라디오를 끄고 조용히 지나간다', value:'I'} ] },
+  { axis:'SN', icon:'photo', title:'바뀐 졸업앨범',
+    text:'졸업앨범을 넘기다, 낯선 이름 아래 <em>당신의 얼굴</em>이 붙어 있는 페이지를 발견한다.',
+    choices:[ {text:'사실관계만 침착하게 확인한다', value:'S'}, {text:'이게 무슨 의미인지 상상해본다', value:'N'} ] },
+  { axis:'TF', icon:'note', title:'누군가를 기다린 사람',
+    text:'도서관 구석, 오래된 일기장에 이런 문장이 적혀 있다 — <em>"그 애가 돌아올 때까지, 나는 여기서 기다릴 것이다."</em>',
+    choices:[ {text:'탈출에 필요한 정보만 빠르게 훑는다', value:'T'}, {text:'이 문장을 쓴 사람의 마음이 자꾸 눈에 밟힌다', value:'F'} ] },
+  { axis:'JP', icon:'stairs', title:'되돌아오는 계단',
+    text:'계단을 세 층이나 내려온 것 같은데, 창밖 풍경은 <em>조금도 바뀌지 않았다.</em>',
+    choices:[ {text:'지도를 믿고 처음 계획대로 내려간다', value:'J'}, {text:'감각을 믿고 다른 층계참으로 방향을 튼다', value:'P'} ] },
+  { axis:'EI', icon:'piano', title:'빈 무대의 피아노',
+    text:'강당 무대 위, 아무도 없는데 피아노 건반이 <em>같은 음</em>을 반복해서 누르고 있다.',
+    choices:[ {text:'무대로 다가가 직접 확인한다', value:'E'}, {text:'거리를 두고 지켜보기만 한다', value:'I'} ] },
+  { axis:'SN', icon:'note', title:'다른 필체의 지시문',
+    text:'무대 뒤에서 발견한 쪽지엔, 처음 노트와는 전혀 다른 <em>어린아이의 필체</em>로 상반된 지시가 적혀 있다.',
+    choices:[ {text:'처음 규칙을 그대로 믿고 따른다', value:'S'}, {text:'새 지시에 담긴 숨은 의미를 헤아려본다', value:'N'} ] },
+  { axis:'TF', icon:'box', title:'긁는 소리가 나는 상자',
+    text:'무대 아래 잠긴 상자 안에서, 무언가 <em>손톱으로 긁는</em> 듯한 소리가 희미하게 들려온다.',
+    choices:[ {text:'상자를 열지 않고 냉정하게 판단한다', value:'T'}, {text:'안에 있는 게 괜찮은 건지 마음이 쓰인다', value:'F'} ] },
+  { axis:'JP', icon:'shadow', title:'한 걸음 뒤의 그림자',
+    text:'마지막 복도, 정문이 눈앞이다. 그런데 발밑 그림자가 당신의 움직임보다 정확히 <em>한 걸음</em> 늦게 따라오고 있다.',
+    choices:[ {text:'처음 세운 계획대로 끝까지 걸어나간다', value:'J'}, {text:'그 자리에서 즉흥적으로 방향을 튼다', value:'P'} ] },
+];
+
+const endings = {
+  ISTJ:{name:'규칙을 끝까지 지킨 자', text:'정해진 순서를 한 치도 어기지 않고 따르자, 등 뒤의 숨소리가 서서히 멀어진다. 정문을 나서면서도 뒤돌아보지 않는다 — 몸이 먼저, 그래야 한다는 걸 알고 있었다.'},
+  ISFJ:{name:'등을 내어준 자', text:'다친 후배를 업고 걷는 내내, 무언가 발밑에서 따라오는 소리가 들렸다. 그래도 걸음을 멈추지 않는다. 교문을 나서고서야, 그 소리도 함께 멈췄다는 걸 깨닫는다.'},
+  INFJ:{name:'홀로 진실을 본 자', text:'일기장 마지막 장을 읽는 순간, 이 모든 게 누구의 이야기였는지 알아버렸다. 아무에게도 말하지 않은 채 교문을 나서지만, 그날 이후로 가끔 그 필체가 당신 손끝에서 흘러나온다.'},
+  INTJ:{name:'동선에서 벗어나지 않은 자', text:'처음 세운 경로에서 단 한 걸음도 벗어나지 않는다. 시계탑이 자정을 알리는 순간, 당신은 이미 운동장 너머에 있다. 뒤에서 종이 열두 번 울렸다는 걸, 다음 날에야 알게 된다.'},
+  ISTP:{name:'소리 없이 해결한 자', text:'옥상 문을 조용히 따고 배선을 끊어 사이렌을 멈춘다. 문제는 해결됐지만, 이후로 방송실 스피커는 늘 낮게 지지직거린다. 아무도 그 이유를 모른다.'},
+  ISFP:{name:'다정함으로 답한 자', text:'창가에 놓인 화분에 물을 주고 지나간 순간, 등 뒤의 서늘한 기운이 스르르 옅어진다. 왜인지는 모른다. 다만 그 화분은, 다음 날 아무도 심은 적 없는 자리에서 자라고 있었다.'},
+  INFP:{name:'이야기를 들어준 자', text:'책상 낙서 속 사연을 끝까지 읽어준 건 당신뿐이었다. 학교는 당신을 순순히 놓아준다. 다만 그날 이후, 같은 낙서가 당신의 방 책상 모서리에서도 발견된다.'},
+  INTP:{name:'저주를 반박한 자', text:'논리적 허점을 찾아 저주 같은 건 없었다고 스스로 증명해버린다. 그런데 증명이 끝난 후에도, 칠판의 글씨는 여전히 조금씩 늘어나고 있다.'},
+  ESTJ:{name:'모두를 이끈 자', text:'흩어진 친구들을 모아 동선을 지휘한다. 마지막까지 한 명도 놓치지 않는다. 다만 나중에 인원을 세어보니, 처음 셌던 숫자보다 하나가 많았다.'},
+  ESFJ:{name:'끝까지 이름을 부른 자', text:'다들 무사한지 이름을 하나하나 확인한다. 그런데 마지막으로 부른 이름에, 아무도 대답하지 않았다. 그래도 당신은 그 이름을 끝까지 부르며 교문을 나선다.'},
+  ENFJ:{name:'손을 놓지 않은 자', text:'겁에 질린 손을 잡고 함께 뛴다. 교문 밖에서 숨을 고르고 나서야, 그 손이 처음부터 차가웠다는 걸 깨닫는다.'},
+  ENTJ:{name:'한 수 위였던 자', text:'뒤엉킨 상황을 정확히 파악하고 새 동선을 지시한다. 저주보다 한 수 위였던 셈이다. 다만 그 후로, 이 학교 지도에는 없는 복도 하나가 당신의 꿈에 계속 나타난다.'},
+  ESTP:{name:'몸으로 먼저 뛴 자', text:'창문 밖으로 뛰어내리는 게 더 빠르다고 판단, 망설임 없이 뛴다. 착지한 순간 뒤를 돌아보니, 방금까지 있던 창문이 사라져 있었다.'},
+  ESFP:{name:'그 순간을 놓치지 않은 자', text:'도망치던 와중에도 피아노 소리에 발길을 멈췄다. 짧게 건반을 두드리고 웃으며 뛰쳐나온다. 다만 그 곡은, 아무도 가르쳐준 적 없는 멜로디였다.'},
+  ENFP:{name:'다 데려온 자', text:'동선을 몇 번이나 바꾼 끝에, 숨어 있던 다른 친구까지 함께 구했다. 다만 다음 날 출석부에는, 그 친구의 이름이 애초에 없었다.'},
+  ENTP:{name:'설정 자체에 반박한 자', text:'이 괴담 자체가 앞뒤가 안 맞는다며 논리적 허점을 찾아 없던 비상구를 만들어낸다. 다만 그 비상구는, 당신이 나온 뒤 다시는 그 자리에서 보이지 않았다.'},
+};
+
+let current = -1;
+const scores = { E:0,I:0,S:0,N:0,T:0,F:0,J:0,P:0 };
+const frame = document.getElementById('frame');
+const recBadge = `<div class="rec"><span class="dot"></span>REC</div>`;
+
+function renderIntro(){
+  frame.innerHTML = `
+    ${recBadge}
+    <div class="eyebrow">Found Footage · Interactive</div>
+    <div class="icon">${svgIcons.moon}</div>
+    <h1>폐교, 괴담이 시작되는 밤</h1>
+    <div class="story" style="text-align:center;">
+      방과 후 깜빡 잠들었다 깨어난 교실. 창밖은 이미 캄캄하고, 아무도 없어야 할 학교엔 <em>무언가</em>가 함께 있다.<br><br>
+      16번의 선택으로, 당신은 이 밤을 어떻게 빠져나갈지 정하게 된다.
+    </div>
+    <button class="start-btn" onclick="nextScene()">교실 문을 연다</button>
+  `;
+}
+
+function renderDots(){
+  let html = '<div class="dots">';
+  for(let i=0;i<scenes.length;i++){
+    let cls='dot-step';
+    if(i<current) cls+=' done'; else if(i===current) cls+=' active';
+    html+=`<div class="${cls}"></div>`;
+  }
+  return html+'</div>';
+}
+
+function renderScene(){
+  const s = scenes[current];
+  let html = recBadge + renderDots();
+  html += `<div class="eyebrow">Scene ${current+1} / ${scenes.length}</div>`;
+  html += `<div class="icon">${svgIcons[s.icon]}</div>`;
+  html += `<h1>${s.title}</h1>`;
+  html += `<div class="story">${s.text}</div>`;
+  html += '<div class="choices">';
+  s.choices.forEach(c=>{ html+=`<button class="choice" onclick="choose('${c.value}')">${c.text}</button>`; });
+  html += '</div>';
+  frame.innerHTML = html;
+}
+
+function choose(value){ scores[value]+=1; nextScene(); }
+
+function nextScene(){
+  current++;
+  if(current >= scenes.length) renderEnding(); else renderScene();
+}
+
+function renderEnding(){
+  const type = (scores.E>=scores.I?'E':'I') + (scores.S>=scores.N?'S':'N') + (scores.T>=scores.F?'T':'F') + (scores.J>=scores.P?'J':'P');
+  const ending = endings[type];
+  const letters = type.split('');
+  let html = recBadge;
+  html += `<div class="eyebrow">The Ending</div>`;
+  html += `<div class="icon">${svgIcons.shadow}</div>`;
+  html += '<div class="compass">';
+  letters.forEach(l=>{ html += `<div class="letter-slot">${l}</div>`; });
+  html += '</div>';
+  html += `<div class="type-title">${type}</div>`;
+  html += `<div class="type-name">${ending.name}</div>`;
+  html += `<div class="ending-text">${ending.text}</div>`;
+  html += `<button class="restart" onclick="restart()">다시 교실로 돌아가기</button>`;
+  frame.innerHTML = html;
+}
+
+function restart(){
+  current=-1;
+  for(const k in scores) scores[k]=0;
+  renderIntro();
+}
+
+renderIntro();
+</script>
+</body>
+</html>
